@@ -227,18 +227,21 @@ function App() {
   };
 
   return (
-    <div className="flex h-screen bg-surface-50 overflow-hidden font-sans">
-      {/* Sidebar */}
-      <aside className="w-80 bg-white border-r border-surface-200 flex flex-col shadow-sm z-10">
-        <div className="p-6 border-b border-surface-200">
-          <h1 className="text-xl font-bold text-surface-900 flex items-center gap-2">
-            <LayoutGrid className="text-primary-600" />
-            Passport Photo Maker
-          </h1>
-          <p className="text-sm text-surface-700 mt-1">Local processing only.</p>
+    <div className="flex flex-col md:flex-row h-screen bg-surface-50 overflow-hidden font-sans">
+
+      {/* Sidebar Controls */}
+      <aside className="w-full md:w-80 bg-white border-t md:border-t-0 md:border-r border-surface-200 flex flex-col shadow-sm z-20 h-[55vh] md:h-screen shrink-0 order-2 md:order-1">
+        <div className="p-4 md:p-6 border-b border-surface-200 shrink-0 flex justify-between items-center">
+          <div>
+            <h1 className="text-lg md:text-xl font-bold text-surface-900 flex items-center gap-2">
+              <LayoutGrid className="text-primary-600 w-5 h-5 md:w-6 md:h-6" />
+              Passport Photo Maker
+            </h1>
+            <p className="text-xs md:text-sm text-surface-700 mt-0.5 md:mt-1">Local processing only.</p>
+          </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
           {/* Upload Section */}
           <section>
             <h2 className="text-sm font-semibold text-surface-900 uppercase tracking-wider mb-3">
@@ -429,7 +432,7 @@ function App() {
           </section>
         </div>
 
-        <div className="p-6 border-t border-surface-200 space-y-3 bg-surface-50">
+        <div className="p-4 md:p-6 border-t border-surface-200 space-y-3 bg-surface-50 shrink-0">
           <button
             onClick={handleExportJpg}
             disabled={!processedImageUrl}
@@ -450,22 +453,22 @@ function App() {
       </aside>
 
       {/* Main Preview Area */}
-      <main className="flex-1 flex flex-col bg-surface-100 relative">
-        <header className="h-16 border-b border-surface-200 bg-white flex items-center justify-between px-8 absolute top-0 left-0 right-0 z-10 shadow-sm">
-          <h2 className="text-lg font-medium text-surface-900 flex items-center gap-2">
+      <main className="flex-1 flex flex-col bg-surface-100 relative order-1 md:order-2 h-[45vh] md:h-screen overflow-hidden">
+        <header className="h-14 md:h-16 border-b border-surface-200 bg-white flex items-center justify-between px-4 md:px-8 absolute top-0 left-0 right-0 z-10 shadow-sm">
+          <h2 className="text-base md:text-lg font-medium text-surface-900 flex items-center gap-2">
             Print Sheet Preview
             {isProcessing && <span className="flex h-2 w-2 relative ml-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-500"></span>
             </span>}
           </h2>
-          <div className="text-sm text-surface-700 flex gap-4 bg-surface-50 px-3 py-1.5 rounded-lg border border-surface-200">
+          <div className="text-xs md:text-sm text-surface-700 flex gap-2 md:gap-4 bg-surface-50 px-2.5 py-1.5 md:px-3 md:py-1.5 rounded-lg border border-surface-200">
             <span>Size: <strong className="text-surface-900 font-semibold">{paperSize}</strong></span>
-            <span className="border-l border-surface-200 pl-4">Photos: <strong className="text-surface-900 font-semibold">{gridCount}</strong></span>
+            <span className="border-l border-surface-200 pl-2 md:pl-4">Photos: <strong className="text-surface-900 font-semibold">{gridCount}</strong></span>
           </div>
         </header>
 
-        <div className="flex-1 overflow-auto pt-16 p-8 flex items-center justify-center bg-surface-100">
+        <div className="flex-1 overflow-auto pt-14 md:pt-16 p-4 md:p-8 flex items-center justify-center bg-surface-100">
           {sourceImageObjectURL ? (
             <div className="relative shadow-2xl rounded-sm transition-all duration-300 bg-white" style={{
               width: paperSize === 'A4' ? (paperOrientation === 'portrait' ? '210mm' : '297mm') : (paperOrientation === 'portrait' ? '4in' : '6in'),
