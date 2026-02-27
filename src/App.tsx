@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, Settings, LayoutGrid, Download, Printer, RefreshCcw } from 'lucide-react';
+import { Upload, Settings, LayoutGrid, Download, Printer, RefreshCcw, Menu, Minus, Plus } from 'lucide-react';
 import { ImagePipeline } from './services/imagePipeline';
 import { jsPDF } from 'jspdf';
 import './App.css';
@@ -16,6 +16,44 @@ function App() {
   const [rotationDegree, setRotationDegree] = useState<number>(0);
   const [useBlueBg, setUseBlueBg] = useState(false);
   const [applyBeautify, setApplyBeautify] = useState(true);
+
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [scale, setScale] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const isDraggingRef = useRef(false);
+  const dragStartRef = useRef({ x: 0, y: 0 });
+
+  const handleMouseDown = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    if ('button' in e && e.button !== 0) return; // Only drag on left click
+    isDraggingRef.current = true;
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+    dragStartRef.current = {
+      x: clientX - position.x,
+      y: clientY - position.y
+    };
+  }, [position]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    if (!isDraggingRef.current) return;
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+    setPosition({
+      x: clientX - dragStartRef.current.x,
+      y: clientY - dragStartRef.current.y
+    });
+  }, []);
+
+  const handleMouseUp = useCallback(() => {
+    isDraggingRef.current = false;
+  }, []);
+
+  const handleZoomIn = () => setScale(prev => Math.min(prev + 0.2, 5));
+  const handleZoomOut = () => setScale(prev => Math.max(prev - 0.2, 0.2));
+  const resetView = () => {
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
+  };
 
   const [sourceImageObjectURL, setSourceImageObjectURL] = useState<string | null>(null);
   const [processedImageUrl, setProcessedImageUrl] = useState<string | null>(null);
@@ -79,7 +117,7 @@ function App() {
     return () => {
       isSubscribed = false;
     };
-  }, [sourceImageObjectURL, useBlueBg, applyBeautify]);
+  }, [sourceImageObjectURL, useBlueBg, applyBeautify, rotationDegree]);
 
   // Effect to render grid onto canvas whenever layout settings or processed image changes
   useEffect(() => {
@@ -173,8 +211,8 @@ function App() {
       const scaledHeight = totalHeight * scale;
 
       // Center the scaled block in the canvas
-      let startX = (canvasWidthInPx - scaledWidth) / 2;
-      let startY = (canvasHeightInPx - scaledHeight) / 2;
+      const startX = (canvasWidthInPx - scaledWidth) / 2;
+      const startY = (canvasHeightInPx - scaledHeight) / 2;
 
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
@@ -230,7 +268,8 @@ function App() {
     <div className="flex flex-col md:flex-row h-screen bg-surface-50 overflow-hidden font-sans">
 
       {/* Sidebar Controls */}
-      <aside className="w-full md:w-80 bg-white border-t md:border-t-0 md:border-r border-surface-200 flex flex-col shadow-sm z-20 h-[55vh] md:h-screen shrink-0 order-2 md:order-1">
+      <aside className={`bg-white border-t md:border-t-0 border-surface-200 flex flex-col shadow-sm z-20 shrink-0 order-2 md:order-1 transition-all duration-300 ease-in-out ${isSidebarOpen ? 'h-[55vh] md:h-screen w-full md:w-80 md:border-r' : 'h-0 w-full md:w-0 overflow-hidden md:h-screen'
+        }`}>
         <div className="p-4 md:p-6 border-b border-surface-200 shrink-0 flex justify-between items-center">
           <div>
             <h1 className="text-lg md:text-xl font-bold text-surface-900 flex items-center gap-2">
@@ -455,37 +494,71 @@ function App() {
       {/* Main Preview Area */}
       <main className="flex-1 flex flex-col bg-surface-100 relative order-1 md:order-2 h-[45vh] md:h-screen overflow-hidden">
         <header className="h-14 md:h-16 border-b border-surface-200 bg-white flex items-center justify-between px-4 md:px-8 absolute top-0 left-0 right-0 z-10 shadow-sm">
-          <h2 className="text-base md:text-lg font-medium text-surface-900 flex items-center gap-2">
-            Print Sheet Preview
-            {isProcessing && <span className="flex h-2 w-2 relative ml-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-500"></span>
-            </span>}
-          </h2>
+          <div className="flex items-center gap-2 md:gap-3">
+            <button
+              onClick={() => setIsSidebarOpen(prev => !prev)}
+              className="p-2 -ml-2 rounded-lg hover:bg-surface-100 text-surface-600 transition-colors"
+              title={isSidebarOpen ? "Hide Settings" : "Show Settings"}
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <h2 className="text-base md:text-lg font-medium text-surface-900 flex items-center gap-2">
+              Print Sheet Preview
+              {isProcessing && <span className="flex h-2 w-2 relative ml-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-500"></span>
+              </span>}
+            </h2>
+          </div>
           <div className="text-xs md:text-sm text-surface-700 flex gap-2 md:gap-4 bg-surface-50 px-2.5 py-1.5 md:px-3 md:py-1.5 rounded-lg border border-surface-200">
             <span>Size: <strong className="text-surface-900 font-semibold">{paperSize}</strong></span>
             <span className="border-l border-surface-200 pl-2 md:pl-4">Photos: <strong className="text-surface-900 font-semibold">{gridCount}</strong></span>
           </div>
         </header>
 
-        <div className="flex-1 overflow-auto pt-14 md:pt-16 p-4 md:p-8 flex items-center justify-center bg-surface-100">
+        <div
+          className="flex-1 overflow-hidden pt-14 md:pt-16 p-4 md:p-8 flex items-center justify-center bg-surface-100 cursor-move relative select-none"
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          onTouchStart={handleMouseDown}
+          onTouchMove={handleMouseMove}
+          onTouchEnd={handleMouseUp}
+          onTouchCancel={handleMouseUp}
+        >
           {sourceImageObjectURL ? (
-            <div className="relative shadow-2xl rounded-sm transition-all duration-300 bg-white" style={{
+            <div className="relative shadow-2xl rounded-sm transition-transform duration-75 bg-white origin-center" style={{
               width: paperSize === 'A4' ? (paperOrientation === 'portrait' ? '210mm' : '297mm') : (paperOrientation === 'portrait' ? '4in' : '6in'),
               height: paperSize === 'A4' ? (paperOrientation === 'portrait' ? '297mm' : '210mm') : (paperOrientation === 'portrait' ? '6in' : '4in'),
-              aspectRatio: paperSize === 'A4' ? (paperOrientation === 'portrait' ? '210/297' : '297/210') : (paperOrientation === 'portrait' ? '4/6' : '6/4')
+              aspectRatio: paperSize === 'A4' ? (paperOrientation === 'portrait' ? '210/297' : '297/210') : (paperOrientation === 'portrait' ? '4/6' : '6/4'),
+              transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
             }}>
               <canvas
                 ref={canvasRef}
-                className="w-full h-full object-contain rounded-sm bg-white"
-                style={{ transformOrigin: 'top left' }}
+                className="w-full h-full object-contain rounded-sm bg-white pointer-events-none"
               />
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center text-surface-400 p-12 border-2 border-dashed border-surface-200 rounded-2xl">
+            <div className="flex flex-col items-center justify-center text-surface-400 p-12 border-2 border-dashed border-surface-200 rounded-2xl pointer-events-none">
               <LayoutGrid className="w-16 h-16 mb-4 text-surface-300" />
               <p className="text-lg font-medium">No print preview available</p>
               <p className="text-sm mt-1 text-surface-400">Upload a photo to see the generated print sheet.</p>
+            </div>
+          )}
+
+          {/* Zoom Controls Overlay */}
+          {sourceImageObjectURL && (
+            <div className="absolute bottom-6 right-6 flex items-center bg-white shadow-lg rounded-xl border border-surface-200 p-1 z-10">
+              <button onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()} onClick={handleZoomOut} className="p-2 text-surface-600 hover:text-surface-900 hover:bg-surface-100 rounded-lg">
+                <Minus className="w-5 h-5" />
+              </button>
+              <button onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()} onClick={resetView} className="px-3 py-2 text-surface-600 hover:text-surface-900 hover:bg-surface-100 rounded-lg text-sm font-medium min-w-[60px]">
+                {Math.round(scale * 100)}%
+              </button>
+              <button onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()} onClick={handleZoomIn} className="p-2 text-surface-600 hover:text-surface-900 hover:bg-surface-100 rounded-lg">
+                <Plus className="w-5 h-5" />
+              </button>
             </div>
           )}
         </div>
